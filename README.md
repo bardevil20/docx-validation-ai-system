@@ -27,6 +27,7 @@ It uses **FastAPI** for the core routing and API management, **PostgreSQL** for 
 ├── docker-compose.yml      # PostgreSQL container setup
 ├── requirements.txt        # Python dependencies
 └── .env                    # Environment variables (Not committed)
+```
 
 ## Prerequisites
 * Python 3.10+
