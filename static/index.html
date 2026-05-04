@@ -63,15 +63,25 @@
       formData.append('file', fileInput.files[0]);
       formData.append('rules', rulesInput.value);
 
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 120000);
+
       try {
         const res = await fetch('/api/analyze', {
           method: 'POST',
           body: formData,
+          signal: controller.signal,
         });
 
-        if (!res.ok) throw new Error('Request failed');
+        clearTimeout(timeoutId);
 
-        const violations = await res.json();
+        if (!res.ok) {
+          const errBody = await res.json().catch(() => ({ detail: 'Request failed' }));
+          throw new Error(errBody.detail || `HTTP ${res.status}`);
+        }
+
+        const data = await res.json();
+        const violations = data.violations || [];
 
         results.classList.remove('hidden');
         resultsContent.innerHTML = '';
@@ -85,15 +95,16 @@
           const card = document.createElement('div');
           card.className = 'bg-white rounded-lg shadow-md p-5 border-l-4 border-red-500';
           card.innerHTML = `
-            <h3 class="font-semibold text-gray-800 mb-1">${escapeHtml(v.rule_broken)}</h3>
-            <p class="text-sm text-gray-600 mb-2 italic">"${escapeHtml(v.quote_from_text)}"</p>
+            <h3 class="font-semibold text-gray-800 mb-1">${escapeHtml(v.rule_text)}</h3>
+            <p class="text-sm text-gray-600 mb-2 italic">"${escapeHtml(v.quote)}"</p>
             <p class="text-gray-700">${escapeHtml(v.explanation)}</p>
           `;
           resultsContent.appendChild(card);
         });
       } catch (err) {
+        clearTimeout(timeoutId);
         results.classList.remove('hidden');
-        resultsContent.innerHTML = `<p class="text-red-600">Error: ${escapeHtml(err.message)}</p>`;
+        resultsContent.innerHTML = `<p class="text-red-600">${escapeHtml(err.message)}</p>`;
       } finally {
         submitBtn.disabled = false;
         btnText.textContent = 'Run Analysis';
