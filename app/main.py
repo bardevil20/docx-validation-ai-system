@@ -4,6 +4,11 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.responses import FileResponse
 from fastapi.responses import RedirectResponse
 
+from app.db.database import engine, Base
+from app.models.analysis import Analysis
+from app.models.rules import Rules
+
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI(title="docx-validation-ai-system")
 
